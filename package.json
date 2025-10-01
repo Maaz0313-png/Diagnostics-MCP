@@ -1,0 +1,84 @@
+{
+  "name": "diagnostics-mcp-server",
+  "displayName": "Diagnostics MCP Server",
+  "description": "MCP server providing real-time access to ALL VS Code diagnostics (TypeScript, ESLint, Prettier, all extensions). Requires VS Code extension installation.",
+  "version": "1.0.9",
+  "publisher": "maaz-tajammul",
+  "author": "Maaz Tajammul",
+  "license": "MIT",
+  "bin": {
+    "diagnostics-mcp": "./index.js"
+  },
+  "main": "./dist/extension.js",
+  "engines": {
+    "node": ">=18.0.0",
+    "vscode": "^1.104.0"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "diagnostics",
+    "typescript",
+    "linter",
+    "code-analysis"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Maaz0313-png/Diagnostics%20MCP"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "diagnostics-mcp.start",
+        "title": "Start Diagnostics MCP Server"
+      },
+      {
+        "command": "diagnostics-mcp.stop",
+        "title": "Stop Diagnostics MCP Server"
+      },
+      {
+        "command": "diagnostics-mcp.status",
+        "title": "Diagnostics MCP Server Status"
+      }
+    ]
+  },
+  "scripts": {
+    "start": "node index.js",
+    "test": "node test-simple.js",
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile",
+    "lint": "eslint src --ext ts",
+    "package": "vsce package",
+    "prepublish": "npm run compile"
+  },
+  "files": [
+    "index.js",
+    "dist/**/*.js",
+    "src/**/*.ts",
+    "README.md",
+    "LICENSE",
+    "package.json",
+    "tsconfig.json"
+  ],
+  "devDependencies": {
+    "@types/node": "^24.x",
+    "@types/vscode": "^1.104.0",
+    "@typescript-eslint/eslint-plugin": "^8.x",
+    "@typescript-eslint/parser": "^8.x",
+    "@vscode/vsce": "^3.6.2",
+    "eslint": "^9.x"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.18.2",
+    "glob": "^11.0.3",
+    "typescript": "^5.9.3"
+  }
+}
