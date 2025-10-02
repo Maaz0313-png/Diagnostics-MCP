@@ -65,10 +65,6 @@ jobs:
             --title "Diagnostics MCP Server v$VERSION" \
             --notes "## Diagnostics MCP Server v$VERSION
 
-
----
-**Auto-generated from commit:** ${{ github.sha }}"
-          
       - name: Upload VSIX as artifact
         uses: actions/upload-artifact@v4
         with:
