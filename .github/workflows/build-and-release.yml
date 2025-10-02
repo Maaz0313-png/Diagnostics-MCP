@@ -12,45 +12,45 @@ permissions:
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-          
+          node-version: "20"
+
       - name: Install dependencies
         run: npm install
-        
+
       - name: Compile TypeScript
         run: npm run compile
-        
+
       - name: Package VSIX
         run: npx @vscode/vsce package
-        
+
       - name: Get version from package.json
         id: package-version
         run: |
           VERSION=$(node -p "require('./package.json').version")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "VSIX file will be: diagnostics-mcp-server-$VERSION.vsix"
-          
+
       - name: Delete previous releases
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Get all releases
           RELEASES=$(gh release list --limit 100 --json tagName --jq '.[].tagName')
-          
+
           # Delete each release
           for tag in $RELEASES; do
             echo "Deleting release: $tag"
             gh release delete "$tag" --yes --cleanup-tag || true
           done
-          
+
       - name: Create Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -58,7 +58,7 @@ jobs:
           VERSION="${{ steps.package-version.outputs.version }}"
           TAG="v$VERSION"
           VSIX_FILE="diagnostics-mcp-server-$VERSION.vsix"
-          
+
           # Create release with VSIX file
           gh release create "$TAG" \
             "$VSIX_FILE" \
