@@ -1,8 +1,8 @@
 {
   "name": "diagnostics-mcp-server",
   "displayName": "Diagnostics MCP Server",
-  "description": "MCP server providing real-time access to ALL VS Code diagnostics (TypeScript, ESLint, Prettier, all extensions). Requires VS Code extension installation.",
-  "version": "1.0.9",
+  "description": "HTTP MCP Server (port 3846) with 5 diagnostic tools. Auto-starts when VS Code opens. MCP Config: {\"type\": \"http\", \"url\": \"http://127.0.0.1:3846/mcp\"}. Tools: get_all_diagnostics, get_errors, get_warnings, get_info, get_workspace_health. 3 Commands: Start/Stop/Status server.",
+  "version": "1.0.12",
   "publisher": "maaz-tajammul",
   "author": "Maaz Tajammul",
   "license": "MIT",
@@ -18,9 +18,13 @@
     "mcp",
     "model-context-protocol",
     "diagnostics",
+    "http-transport",
     "typescript",
+    "eslint",
     "linter",
-    "code-analysis"
+    "code-analysis",
+    "workspace-health",
+    "real-time"
   ],
   "repository": {
     "type": "git",
@@ -29,6 +33,16 @@
   "categories": [
     "Other"
   ],
+  "homepage": "https://github.com/Maaz0313-png/Diagnostics-MCP#readme",
+  "bugs": {
+    "url": "https://github.com/Maaz0313-png/Diagnostics-MCP/issues"
+  },
+  "qna": "https://github.com/Maaz0313-png/Diagnostics-MCP/discussions",
+  "icon": "https://raw.githubusercontent.com/Maaz0313-png/Diagnostics-MCP/main/icon.png",
+  "galleryBanner": {
+    "color": "#1e1e1e",
+    "theme": "dark"
+  },
   "activationEvents": [
     "onStartupFinished"
   ],
@@ -36,17 +50,48 @@
     "commands": [
       {
         "command": "diagnostics-mcp.start",
-        "title": "Start Diagnostics MCP Server"
+        "title": "🚀 Start HTTP MCP Server (Port 3846)",
+        "category": "Diagnostics MCP"
       },
       {
         "command": "diagnostics-mcp.stop",
-        "title": "Stop Diagnostics MCP Server"
+        "title": "🛑 Stop HTTP MCP Server",
+        "category": "Diagnostics MCP"
       },
       {
         "command": "diagnostics-mcp.status",
-        "title": "Diagnostics MCP Server Status"
+        "title": "📊 MCP Server Status (5 Tools + Health)",
+        "category": "Diagnostics MCP"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Diagnostics MCP Server",
+      "properties": {
+        "diagnostics-mcp.autoStart": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically start HTTP MCP server when VS Code opens"
+        },
+        "diagnostics-mcp.port": {
+          "type": "number",
+          "default": 3846,
+          "description": "Port for HTTP MCP server (default: 3846)"
+        }
+      }
+    },
+    "mcpConfiguration": {
+      "title": "MCP Client Configuration",
+      "description": "Add this to your MCP client configuration (Claude Desktop, VS Code MCP settings, etc.)",
+      "example": {
+        "mcpServers": {
+          "diagnostics": {
+            "type": "http",
+            "url": "http://127.0.0.1:3846/mcp",
+            "description": "VS Code diagnostics detector (TypeScript, ESLint, Prettier, all extensions)"
+          }
+        }
+      }
+    }
   },
   "scripts": {
     "start": "node index.js",

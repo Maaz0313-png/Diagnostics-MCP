@@ -15,6 +15,69 @@ export function activate(context: vscode.ExtensionContext) {
   // Start HTTP server for MCP
   startHttpServer();
 
+  // Register commands
+  const startCommand = vscode.commands.registerCommand(
+    "diagnostics-mcp.start",
+    () => {
+      if (!httpServer || !httpServer.listening) {
+        startHttpServer();
+        vscode.window.showInformationMessage(
+          "🚀 HTTP MCP Server started on port 3846"
+        );
+        outputChannel.appendLine("🚀 HTTP MCP Server manually started");
+      } else {
+        vscode.window.showInformationMessage(
+          "✅ HTTP MCP Server already running on port 3846"
+        );
+        outputChannel.appendLine("✅ HTTP MCP Server already running");
+      }
+    }
+  );
+
+  const stopCommand = vscode.commands.registerCommand(
+    "diagnostics-mcp.stop",
+    () => {
+      if (httpServer && httpServer.listening) {
+        httpServer.close(() => {
+          vscode.window.showInformationMessage("🛑 HTTP MCP Server stopped");
+          outputChannel.appendLine("🛑 HTTP MCP Server stopped");
+        });
+      } else {
+        vscode.window.showInformationMessage("⚠️ HTTP MCP Server not running");
+        outputChannel.appendLine("⚠️ HTTP MCP Server not running");
+      }
+    }
+  );
+
+  const statusCommand = vscode.commands.registerCommand(
+    "diagnostics-mcp.status",
+    () => {
+      const isRunning = httpServer && httpServer.listening;
+      const status = isRunning ? "RUNNING" : "STOPPED";
+      const port = isRunning ? "3846" : "N/A";
+      const url = isRunning ? "http://127.0.0.1:3846/mcp" : "N/A";
+
+      const diagnosticsResult = getAllDiagnostics();
+      const healthResult = getWorkspaceHealth();
+
+      const message = `HTTP MCP Server Status:
+📡 Status: ${status}
+🌐 Port: ${port}
+🔗 URL: ${url}
+🛠️ Tools: 5 (all diagnostics, errors, warnings, info, health)
+📊 Current Diagnostics: ${diagnosticsResult.total}
+💚 Health Score: ${healthResult.healthScore}%`;
+
+      vscode.window.showInformationMessage(message, { modal: true });
+      outputChannel.appendLine(
+        `Status check: ${status} - Diagnostics: ${diagnosticsResult.total} - Health: ${healthResult.healthScore}%`
+      );
+    }
+  );
+
+  // Add commands to context
+  context.subscriptions.push(startCommand, stopCommand, statusCommand);
+
   vscode.window.showInformationMessage("✅ Diagnostics MCP - ACTIVATED!");
   console.log("✅ DIAGNOSTICS MCP: ACTIVATED");
 }
@@ -116,10 +179,12 @@ export function deactivate() {
 }
 
 /**
- * Handle MCP protocol messages
+ * Handle MCP protocol messages with enhanced error handling and connection stability
  */
 function handleMCPMessage(message: any, res: http.ServerResponse) {
   try {
+    outputChannel.appendLine(`Received MCP message: ${message.method}`);
+
     if (message.method === "initialize") {
       // Initialize request
       const response = {
@@ -132,11 +197,12 @@ function handleMCPMessage(message: any, res: http.ServerResponse) {
           },
           serverInfo: {
             name: "diagnostics-mcp-server",
-            version: "1.0.8",
+            version: "1.0.10",
           },
         },
       };
       res.write(`event: message\ndata: ${JSON.stringify(response)}\n\n`);
+      outputChannel.appendLine("Sent initialize response");
     } else if (message.method === "tools/list") {
       // List available tools
       const response = {
@@ -160,122 +226,299 @@ function handleMCPMessage(message: any, res: http.ServerResponse) {
                 properties: {},
               },
             },
-          ],
-        },
-      };
-      res.write(`event: message\ndata: ${JSON.stringify(response)}\n\n`);
-    } else if (message.method === "tools/call") {
-      // Handle tool calls
-      const toolName = message.params?.name;
-      let toolResult: any = {};
-
-      if (toolName === "get_all_diagnostics") {
-        toolResult = getAllDiagnostics();
-      } else if (toolName === "get_workspace_health") {
-        toolResult = getWorkspaceHealth();
-      } else {
-        toolResult = { error: `Unknown tool: ${toolName}` };
-      }
-
-      const response = {
-        jsonrpc: "2.0",
-        id: message.id,
-        result: {
-          content: [
             {
-              type: "text",
-              text: JSON.stringify(toolResult, null, 2),
+              name: "get_errors",
+              description:
+                "Get only error-level diagnostics from the workspace",
+              inputSchema: {
+                type: "object",
+                properties: {},
+              },
+            },
+            {
+              name: "get_warnings",
+              description:
+                "Get only warning-level diagnostics from the workspace",
+              inputSchema: {
+                type: "object",
+                properties: {},
+              },
+            },
+            {
+              name: "get_info",
+              description: "Get only info-level diagnostics from the workspace",
+              inputSchema: {
+                type: "object",
+                properties: {},
+              },
             },
           ],
         },
       };
       res.write(`event: message\ndata: ${JSON.stringify(response)}\n\n`);
+      outputChannel.appendLine("Sent tools/list response with 5 tools");
+    } else if (message.method === "tools/call") {
+      // Handle tool calls with enhanced error handling
+      const toolName = message.params?.name;
+      outputChannel.appendLine(`Executing tool: ${toolName}`);
+
+      let toolResult: any = {};
+
+      try {
+        if (toolName === "get_all_diagnostics") {
+          toolResult = getAllDiagnostics();
+        } else if (toolName === "get_workspace_health") {
+          toolResult = getWorkspaceHealth();
+        } else if (toolName === "get_errors") {
+          toolResult = getDiagnosticsBySeverity(
+            vscode.DiagnosticSeverity.Error
+          );
+        } else if (toolName === "get_warnings") {
+          toolResult = getDiagnosticsBySeverity(
+            vscode.DiagnosticSeverity.Warning
+          );
+        } else if (toolName === "get_info") {
+          toolResult = getDiagnosticsBySeverity(
+            vscode.DiagnosticSeverity.Information
+          );
+        } else {
+          // Return proper error response for unknown tools
+          const errorResponse = {
+            jsonrpc: "2.0",
+            id: message.id,
+            error: {
+              code: -32601,
+              message: `Unknown tool: ${toolName}`,
+            },
+          };
+          res.write(
+            `event: message\ndata: ${JSON.stringify(errorResponse)}\n\n`
+          );
+          outputChannel.appendLine(`Unknown tool requested: ${toolName}`);
+          return;
+        }
+
+        // Ensure result is valid even if empty
+        if (toolResult === null || toolResult === undefined) {
+          toolResult = { message: "No data available", status: "empty" };
+        }
+
+        outputChannel.appendLine(
+          `Tool ${toolName} executed successfully, result count: ${
+            JSON.stringify(toolResult).length
+          } characters`
+        );
+
+        const response = {
+          jsonrpc: "2.0",
+          id: message.id,
+          result: {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(toolResult, null, 2),
+              },
+            ],
+          },
+        };
+        res.write(`event: message\ndata: ${JSON.stringify(response)}\n\n`);
+        outputChannel.appendLine(`Sent response for tool: ${toolName}`);
+      } catch (toolError) {
+        const errorMessage =
+          toolError instanceof Error ? toolError.message : String(toolError);
+        outputChannel.appendLine(
+          `Tool execution error for ${toolName}: ${errorMessage}`
+        );
+        const errorResponse = {
+          jsonrpc: "2.0",
+          id: message.id,
+          error: {
+            code: -32603,
+            message: `Tool execution failed: ${errorMessage}`,
+            data: String(toolError),
+          },
+        };
+        res.write(`event: message\ndata: ${JSON.stringify(errorResponse)}\n\n`);
+      }
+    } else {
+      // Handle unknown methods
+      outputChannel.appendLine(`Unknown method: ${message.method}`);
+      const errorResponse = {
+        jsonrpc: "2.0",
+        id: message.id,
+        error: {
+          code: -32601,
+          message: "Method not found",
+        },
+      };
+      res.write(`event: message\ndata: ${JSON.stringify(errorResponse)}\n\n`);
     }
   } catch (error) {
-    outputChannel.appendLine(`Error handling MCP message: ${error}`);
+    outputChannel.appendLine(`Critical error handling MCP message: ${error}`);
     const errorResponse = {
       jsonrpc: "2.0",
       id: message.id || null,
       error: {
         code: -32603,
-        message: "Internal error",
+        message: "Internal server error",
         data: String(error),
       },
     };
-    res.write(`event: message\ndata: ${JSON.stringify(errorResponse)}\n\n`);
+
+    try {
+      res.write(`event: message\ndata: ${JSON.stringify(errorResponse)}\n\n`);
+    } catch (writeError) {
+      outputChannel.appendLine(`Failed to write error response: ${writeError}`);
+    }
   }
 }
 
 /**
- * Get all diagnostics from VS Code
+ * Get all diagnostics from VS Code with enhanced error handling
  */
 function getAllDiagnostics() {
-  const diagnostics = vscode.languages.getDiagnostics();
-  let totalDiagnostics = 0;
-  const diagnosticsList: any[] = [];
+  try {
+    const diagnostics = vscode.languages.getDiagnostics();
+    let totalDiagnostics = 0;
+    const diagnosticsList: any[] = [];
 
-  for (const [uri, fileDiagnostics] of diagnostics) {
-    totalDiagnostics += fileDiagnostics.length;
-    for (const diagnostic of fileDiagnostics) {
-      diagnosticsList.push({
-        file: uri.fsPath,
-        line: diagnostic.range.start.line + 1,
-        column: diagnostic.range.start.character + 1,
-        severity:
-          diagnostic.severity === 0
-            ? "error"
-            : diagnostic.severity === 1
-            ? "warning"
-            : "info",
-        message: diagnostic.message,
-        source: diagnostic.source,
-      });
+    for (const [uri, fileDiagnostics] of diagnostics) {
+      totalDiagnostics += fileDiagnostics.length;
+      for (const diagnostic of fileDiagnostics) {
+        diagnosticsList.push({
+          file: uri.fsPath,
+          line: diagnostic.range.start.line + 1,
+          column: diagnostic.range.start.character + 1,
+          severity:
+            diagnostic.severity === 0
+              ? "error"
+              : diagnostic.severity === 1
+              ? "warning"
+              : "info",
+          message: diagnostic.message || "No message",
+          source: diagnostic.source || "unknown",
+        });
+      }
     }
-  }
 
-  return {
-    total: totalDiagnostics,
-    diagnostics: diagnosticsList,
-  };
+    return {
+      total: totalDiagnostics,
+      diagnostics: diagnosticsList,
+      status: totalDiagnostics > 0 ? "found" : "empty",
+      timestamp: new Date().toISOString(),
+    };
+  } catch (error) {
+    outputChannel.appendLine(`Error getting diagnostics: ${error}`);
+    return {
+      total: 0,
+      diagnostics: [],
+      status: "error",
+      error: String(error),
+      timestamp: new Date().toISOString(),
+    };
+  }
 }
 
 /**
- * Get workspace health score
+ * Get workspace health score with enhanced error handling
  */
 function getWorkspaceHealth() {
-  const diagnostics = vscode.languages.getDiagnostics();
-  let errors = 0;
-  let warnings = 0;
-  let infos = 0;
+  try {
+    const diagnostics = vscode.languages.getDiagnostics();
+    let errors = 0;
+    let warnings = 0;
+    let infos = 0;
 
-  for (const [, fileDiagnostics] of diagnostics) {
-    for (const diagnostic of fileDiagnostics) {
-      if (diagnostic.severity === 0) errors++;
-      else if (diagnostic.severity === 1) warnings++;
-      else infos++;
+    for (const [, fileDiagnostics] of diagnostics) {
+      for (const diagnostic of fileDiagnostics) {
+        if (diagnostic.severity === 0) errors++;
+        else if (diagnostic.severity === 1) warnings++;
+        else infos++;
+      }
     }
+
+    // Simple health score calculation
+    const totalIssues = errors + warnings + infos;
+    const errorPenalty = errors * 10;
+    const warningPenalty = warnings * 3;
+    const infoPenalty = infos * 1;
+    const healthScore = Math.max(
+      0,
+      Math.min(100, 100 - (errorPenalty + warningPenalty + infoPenalty))
+    );
+
+    return {
+      healthScore: Math.round(healthScore),
+      status:
+        healthScore >= 90
+          ? "excellent"
+          : healthScore >= 70
+          ? "good"
+          : healthScore >= 50
+          ? "fair"
+          : "poor",
+      summary: { errors, warnings, infos, total: totalIssues },
+      timestamp: new Date().toISOString(),
+    };
+  } catch (error) {
+    outputChannel.appendLine(`Error calculating workspace health: ${error}`);
+    return {
+      healthScore: 0,
+      status: "error",
+      summary: { errors: 0, warnings: 0, infos: 0, total: 0 },
+      error: String(error),
+      timestamp: new Date().toISOString(),
+    };
   }
+}
 
-  // Simple health score calculation
-  const totalIssues = errors + warnings + infos;
-  const errorPenalty = errors * 10;
-  const warningPenalty = warnings * 3;
-  const infoPenalty = infos * 1;
-  const healthScore = Math.max(
-    0,
-    Math.min(100, 100 - (errorPenalty + warningPenalty + infoPenalty))
-  );
+/**
+ * Get diagnostics filtered by severity level with enhanced error handling
+ */
+function getDiagnosticsBySeverity(severity: vscode.DiagnosticSeverity) {
+  try {
+    const diagnostics = vscode.languages.getDiagnostics();
+    let totalDiagnostics = 0;
+    const diagnosticsList: any[] = [];
 
-  return {
-    healthScore: Math.round(healthScore),
-    status:
-      healthScore >= 90
-        ? "excellent"
-        : healthScore >= 70
-        ? "good"
-        : healthScore >= 50
-        ? "fair"
-        : "poor",
-    summary: { errors, warnings, infos, total: totalIssues },
-  };
+    for (const [uri, fileDiagnostics] of diagnostics) {
+      for (const diagnostic of fileDiagnostics) {
+        if (diagnostic.severity === severity) {
+          totalDiagnostics++;
+          diagnosticsList.push({
+            file: uri.fsPath,
+            line: diagnostic.range.start.line + 1,
+            column: diagnostic.range.start.character + 1,
+            severity:
+              severity === 0 ? "error" : severity === 1 ? "warning" : "info",
+            message: diagnostic.message || "No message",
+            source: diagnostic.source || "unknown",
+          });
+        }
+      }
+    }
+
+    const severityName =
+      severity === 0 ? "errors" : severity === 1 ? "warnings" : "info";
+
+    return {
+      count: totalDiagnostics,
+      diagnostics: diagnosticsList,
+      severityLevel: severityName,
+      status: totalDiagnostics > 0 ? "found" : "empty",
+      timestamp: new Date().toISOString(),
+    };
+  } catch (error) {
+    const severityName =
+      severity === 0 ? "errors" : severity === 1 ? "warnings" : "info";
+    outputChannel.appendLine(`Error getting ${severityName}: ${error}`);
+    return {
+      count: 0,
+      diagnostics: [],
+      severityLevel: severityName,
+      status: "error",
+      error: String(error),
+      timestamp: new Date().toISOString(),
+    };
+  }
 }

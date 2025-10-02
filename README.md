@@ -22,11 +22,11 @@ This Model Context Protocol (MCP) server provides AI agents with real-time acces
 
 ### Step 1: Install VS Code Extension
 
-Download and install the extension:
+Download and install the latest extension:
 
 ```powershell
-# Download the VSIX file from releases
-code --install-extension diagnostics-mcp-server-1.0.0.vsix
+# Install the latest VSIX file (enhanced stability & error handling)
+code --install-extension diagnostics-mcp-server-1.0.11.vsix --force
 ```
 
 Or install from VS Code Marketplace (once published):
@@ -36,51 +36,43 @@ Or install from VS Code Marketplace (once published):
 3. Search for "Diagnostics MCP Server"
 4. Click Install
 
-### Step 2: Install NPM Package
+**Latest Version: 1.0.11** - Enhanced connection stability and error handling for empty diagnostic scenarios
 
-```bash
-npm install -g @diagnostics-mcp/server
-```
+### Step 2: Automatic Setup
 
-Or use with npx (no installation needed):
+The VS Code extension automatically starts the MCP server when VS Code opens. No additional installation required!
 
-```bash
-npx @diagnostics-mcp/server
-```
+**Server Details:**
+
+- **Protocol**: HTTP with Server-Sent Events
+- **Port**: 3846 (automatically managed)
+- **Startup**: Automatic with VS Code
 
 ## 🚀 Quick Start
 
-### Add to VS Code MCP Configuration
+### Add to MCP Client Configuration
 
-Add this to your VS Code `mcp.json` file (usually in `%APPDATA%\Code\User\`):
-
-```json
-{
-  "mcpServers": {
-    "diagnostics": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "@diagnostics-mcp/server"],
-      "description": "VS Code diagnostics detector (TypeScript, ESLint, Prettier, all extensions)"
-    }
-  }
-}
-```
-
-Or use local path:
+Add this to your MCP client configuration (e.g., Claude Desktop config or VS Code MCP settings):
 
 ```json
 {
   "mcpServers": {
     "diagnostics": {
-      "type": "stdio",
-      "command": "node",
-      "args": ["d:\\path\\to\\Diagnostics MCP\\index.js"],
-      "description": "VS Code diagnostics detector (local)"
+      "type": "http",
+      "url": "http://127.0.0.1:3846/mcp",
+      "description": "VS Code diagnostics - all 5 tools (errors, warnings, info, health, all diagnostics)"
     }
   }
 }
 ```
+
+### Verify Connection
+
+1. **Check server status**: Visit `http://127.0.0.1:3846/health`
+2. **View logs**: VS Code Output panel → "Diagnostics MCP Server"
+3. **Test connection**: Server automatically starts when VS Code opens
+
+**Available immediately after VS Code extension installation - no additional setup required!**
 
 ### Usage
 
