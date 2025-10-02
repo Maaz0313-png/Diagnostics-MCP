@@ -20,14 +20,7 @@ This Model Context Protocol (MCP) server provides AI agents with real-time acces
 
 ### Step 1: Install VS Code Extension
 
-Download and install the latest extension:
-
-```powershell
-# Install the latest VSIX file
-code --install-extension diagnostics-mcp-server-1.0.12.vsix --force
-```
-
-Or install from VS Code Marketplace (once published):
+Install from VS Code Marketplace:
 
 1. Open VS Code
 2. Go to Extensions (Ctrl+Shift+X)
