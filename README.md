@@ -1,9 +1,9 @@
 # Diagnostics MCP Server
 
-> **MCP server providing real-time access to ALL VS Code diagnostics (TypeScript, ESLint, Prettier, and all installed extensions)**
+> **HTTP MCP server with 5 diagnostic tools providing real-time access to ALL VS Code diagnostics (TypeScript, ESLint, Prettier, and all installed extensions)**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![npm version](https://badge.fury.io/js/@diagnostics-mcp%2Fserver.svg)](https://www.npmjs.com/package/@diagnostics-mcp/server)
+[![Version](https://img.shields.io/badge/version-1.0.12-blue.svg)](https://github.com/Maaz0313-png/Diagnostics-MCP)
 
 ## 🎯 Overview
 
@@ -16,17 +16,15 @@ This Model Context Protocol (MCP) server provides AI agents with real-time acces
 - ✅ **All VS Code Extensions** diagnostics
 - ✅ **Real-time updates** as you code
 
-## 📋 Prerequisites
-
-**REQUIRED:** This package requires the VS Code extension to be installed first!
+## 📋 Installation
 
 ### Step 1: Install VS Code Extension
 
 Download and install the latest extension:
 
 ```powershell
-# Install the latest VSIX file (enhanced stability & error handling)
-code --install-extension diagnostics-mcp-server-1.0.11.vsix --force
+# Install the latest VSIX file
+code --install-extension diagnostics-mcp-server-1.0.12.vsix --force
 ```
 
 Or install from VS Code Marketplace (once published):
@@ -36,11 +34,11 @@ Or install from VS Code Marketplace (once published):
 3. Search for "Diagnostics MCP Server"
 4. Click Install
 
-**Latest Version: 1.0.11** - Enhanced connection stability and error handling for empty diagnostic scenarios
+**Latest Version: 1.0.12** - Complete HTTP MCP implementation with 5 diagnostic tools, enhanced error handling, and working commands
 
-### Step 2: Automatic Setup
+### Step 2: Extension Auto-Start
 
-The VS Code extension automatically starts the MCP server when VS Code opens. No additional installation required!
+The extension automatically starts the HTTP MCP server when VS Code opens. No additional setup required!
 
 **Server Details:**
 
@@ -48,9 +46,9 @@ The VS Code extension automatically starts the MCP server when VS Code opens. No
 - **Port**: 3846 (automatically managed)
 - **Startup**: Automatic with VS Code
 
-## 🚀 Quick Start
+### Step 3: Configure MCP Client
 
-### Add to MCP Client Configuration
+## 🚀 Quick Start
 
 Add this to your MCP client configuration (e.g., Claude Desktop config or VS Code MCP settings):
 
@@ -76,27 +74,25 @@ Add this to your MCP client configuration (e.g., Claude Desktop config or VS Cod
 
 ### Usage
 
-Once configured, AI agents (like GitHub Copilot) can use these MCP tools:
+Once configured, AI agents (like Claude, GitHub Copilot) can use these **5 MCP tools**:
 
-1. **`get_all_diagnostics`** - Get all diagnostics from the workspace
-2. **`get_file_diagnostics`** - Get diagnostics for a specific file
-3. **`get_diagnostics_by_severity`** - Filter by Error/Warning/Info/Hint
-4. **`get_diagnostics_summary`** - Quick overview with counts
-5. **`get_workspace_health`** - Health score and top problematic files
+1. **`get_all_diagnostics`** - Get complete diagnostic information from workspace
+2. **`get_errors`** - Get only error-level diagnostics
+3. **`get_warnings`** - Get only warning-level diagnostics
+4. **`get_info`** - Get only info-level diagnostics
+5. **`get_workspace_health`** - Get workspace health score (0-100)
 
 ## 🔧 How It Works
 
-This package uses a **VS Code Extension Bridge** architecture:
+This extension uses an **HTTP MCP Server** architecture:
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│  AI Agent (GitHub Copilot)                         │
+│  AI Agent (Claude, GitHub Copilot)                 │
 │  ↓                                                  │
-│  MCP Protocol (stdio transport)                    │
+│  HTTP MCP Protocol (port 3846)                     │
 │  ↓                                                  │
-│  Diagnostics MCP Server (this package)             │
-│  ↓                                                  │
-│  VS Code Extension (provides API access)           │
+│  VS Code Extension (HTTP MCP Server)               │
 │  ↓                                                  │
 │  vscode.languages.getDiagnostics() API             │
 │  ↓                                                  │
@@ -112,10 +108,11 @@ This package uses a **VS Code Extension Bridge** architecture:
 
 ## 📦 What's Included
 
-- **`index.js`** - Launcher that starts VS Code with the extension
-- **`dist/`** - Compiled extension code
-- **VS Code Extension** - Accesses VS Code diagnostics API
-- **MCP Server** - Exposes diagnostics via MCP protocol
+- **HTTP MCP Server** - Runs on port 3846 with Server-Sent Events
+- **5 Diagnostic Tools** - Comprehensive workspace diagnostic access
+- **3 VS Code Commands** - Start/Stop/Status server control
+- **Real-time Updates** - Live diagnostic monitoring
+- **Health Scoring** - Workspace quality metrics (0-100)
 
 ## 🛠️ Development
 
@@ -138,11 +135,13 @@ node index.js --help
 node index.js
 ```
 
-## 📖 API Reference
+## 📖 API Reference - 5 MCP Tools
 
-### Tool: `get_all_diagnostics`
+### 1. Tool: `get_all_diagnostics`
 
-Returns all diagnostics from the workspace.
+Get complete diagnostic information from workspace.
+
+**Returns:**
 
 ```json
 {
@@ -156,77 +155,105 @@ Returns all diagnostics from the workspace.
       "message": "Type 'string' is not assignable to type 'number'",
       "source": "ts"
     }
-  ]
+  ],
+  "status": "found",
+  "timestamp": "2025-10-02T10:30:00.000Z"
 }
 ```
 
-### Tool: `get_file_diagnostics`
+### 2. Tool: `get_errors`
 
-Get diagnostics for a specific file.
+Get only error-level diagnostics.
 
-**Input:**
+**Returns:**
 
 ```json
 {
-  "filePath": "d:\\project\\src\\app.ts"
+  "count": 5,
+  "diagnostics": [...],
+  "severityLevel": "errors",
+  "status": "found",
+  "timestamp": "2025-10-02T10:30:00.000Z"
 }
 ```
 
-### Tool: `get_diagnostics_by_severity`
+### 3. Tool: `get_warnings`
 
-Filter diagnostics by severity level.
+Get only warning-level diagnostics.
 
-**Input:**
+**Returns:**
 
 ```json
 {
-  "severity": "error"
+  "count": 3,
+  "diagnostics": [...],
+  "severityLevel": "warnings",
+  "status": "found",
+  "timestamp": "2025-10-02T10:30:00.000Z"
 }
 ```
 
-Options: `error`, `warning`, `information`, `hint`
+### 4. Tool: `get_info`
 
-### Tool: `get_diagnostics_summary`
+Get only info-level diagnostics.
 
-Get summary with counts.
-
-**Output:**
+**Returns:**
 
 ```json
 {
-  "error": 10,
-  "warning": 5,
-  "information": 2,
-  "hint": 1,
-  "total": 18,
-  "filesWithIssues": 8
+  "count": 2,
+  "diagnostics": [...],
+  "severityLevel": "info",
+  "status": "found",
+  "timestamp": "2025-10-02T10:30:00.000Z"
 }
 ```
 
-### Tool: `get_workspace_health`
+### 5. Tool: `get_workspace_health`
 
-Get workspace health score (0-100).
+Get workspace health score (0-100) based on diagnostics.
 
-**Output:**
+**Returns:**
 
 ```json
 {
   "healthScore": 85,
   "status": "good",
   "summary": {
-    "error": 2,
-    "warning": 5,
-    "information": 3,
-    "hint": 1
+    "errors": 2,
+    "warnings": 5,
+    "infos": 3,
+    "total": 10
   },
-  "topFiles": [
-    {
-      "file": "src/problematic.ts",
-      "issues": 12
-    }
-  ]
+  "timestamp": "2025-10-02T10:30:00.000Z"
 }
 ```
+
+**Health Score Calculation:**
+
+- Errors: -10 points each
+- Warnings: -3 points each
+- Info: -1 point each
+- Scale: 0-100 (100 = perfect health)
+- Status: excellent (90+), good (70+), fair (50+), poor (<50)
+
+## 🎮 VS Code Commands
+
+Three commands available in Command Palette (Ctrl+Shift+P):
+
+1. **🚀 Diagnostics MCP: Start HTTP MCP Server (Port 3846)**
+
+   - Manually start the MCP server
+   - Use if server didn't auto-start
+
+2. **🛑 Diagnostics MCP: Stop HTTP MCP Server**
+
+   - Stop the running MCP server
+   - Useful for troubleshooting
+
+3. **📊 Diagnostics MCP: MCP Server Status (5 Tools + Health)**
+   - View server status, current diagnostics count, and health score
+   - Quick health check of your workspace
 
 ## 🤝 Contributing
 
@@ -243,19 +270,18 @@ MIT License - see [LICENSE](LICENSE) file for details
 
 ## ⚠️ Troubleshooting
 
-### "VS Code extension not found"
+### "MCP server not connecting"
 
-Make sure you installed the VSIX extension first:
+1. Check server status: Visit `http://127.0.0.1:3846/health`
+2. View logs: VS Code Output panel → "Diagnostics MCP Server"
+3. Restart server: Use command "Diagnostics MCP: Start HTTP MCP Server"
+4. Reload VS Code window: Ctrl+Shift+P → "Reload Window"
 
-```bash
-code --install-extension diagnostics-mcp-server-1.0.0.vsix
-```
+### "Port 3846 already in use"
 
-### "Failed to launch VS Code"
-
-1. Verify VS Code is installed: `code --version`
-2. Add `code` command to PATH
-3. Restart your terminal
+1. Stop other applications using port 3846
+2. Or change port in VS Code settings: `diagnostics-mcp.port`
+3. Restart VS Code after changing port
 
 ### "No diagnostics returned"
 
@@ -265,14 +291,29 @@ code --install-extension diagnostics-mcp-server-1.0.0.vsix
 
 ## 📝 Version History
 
+### 1.0.12 (Current)
+
+- ✅ Complete HTTP MCP server implementation
+- ✅ 5 specialized diagnostic tools
+- ✅ Enhanced error handling and connection stability
+- ✅ Working VS Code commands (Start/Stop/Status)
+- ✅ Comprehensive tool documentation in metadata
+- ✅ Beautiful diagnostic icon
+- ✅ Full workspace health scoring
+
+### 1.0.11
+
+- ✅ Enhanced connection stability for empty diagnostics
+- ✅ HTTP transport implementation
+
+### 1.0.10
+
+- ✅ Added severity-specific tools (get_errors, get_warnings, get_info)
+
 ### 1.0.0 (Initial Release)
 
-- ✅ Full VS Code diagnostics integration
-- ✅ Support for all language servers
-- ✅ Support for all extensions
-- ✅ Real-time diagnostic updates
-- ✅ 5 MCP tools for diagnostic access
-- ✅ Workspace health scoring
+- ✅ Basic VS Code diagnostics integration
+- ✅ Support for all language servers and extensions
 
 ## 💡 Use Cases
 

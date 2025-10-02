@@ -1,7 +1,7 @@
 {
   "name": "diagnostics-mcp-server",
   "displayName": "Diagnostics MCP Server",
-  "description": "STEP 1: Install this extension. STEP 2: Extension auto-starts HTTP MCP server on port 3846. STEP 3: Add to MCP client config (Claude Desktop/VS Code MCP settings): {\"mcpServers\": {\"diagnostics\": {\"type\": \"http\", \"url\": \"http://127.0.0.1:3846/mcp\", \"description\": \"VS Code diagnostics detector\"}}}. 5 TOOLS: get_all_diagnostics (complete workspace), get_errors (only errors), get_warnings (only warnings), get_info (only info), get_workspace_health (health score 0-100). 3 COMMANDS: Start/Stop/Status server.",
+  "description": "Exposes VS Code diagnostics (errors, warnings, info from TypeScript, ESLint, Prettier, all extensions) to AI agents via HTTP MCP protocol. Auto-starts on port 3846, provides real-time diagnostic access, workspace health scoring, and severity-based filtering. No configuration needed - just install and connect your MCP client to http://127.0.0.1:3846/mcp",
   "version": "1.0.12",
   "publisher": "maaz-tajammul",
   "author": "Maaz Tajammul",
@@ -35,6 +35,7 @@
     "url": "https://github.com/Maaz0313-png/Diagnostics-MCP/issues"
   },
   "qna": "https://github.com/Maaz0313-png/Diagnostics-MCP/discussions",
+  "icon": "icon.png",
   "galleryBanner": {
     "color": "#1e1e1e",
     "theme": "dark"
@@ -114,6 +115,7 @@
     "package": "vsce package"
   },
   "files": [
+    "icon.png",
     "dist/**/*.js",
     "src/**/*.ts",
     "README.md",
