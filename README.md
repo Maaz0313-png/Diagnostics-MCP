@@ -41,8 +41,6 @@ The extension automatically starts the HTTP MCP server when VS Code opens. No ad
 
 ### Step 3: Configure MCP Client
 
-## 🚀 Quick Start
-
 Add this to your MCP client configuration (e.g., Claude Desktop config or VS Code MCP settings):
 
 ```json
