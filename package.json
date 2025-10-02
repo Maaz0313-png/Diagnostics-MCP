@@ -1,14 +1,11 @@
 {
   "name": "diagnostics-mcp-server",
   "displayName": "Diagnostics MCP Server",
-  "description": "HTTP MCP Server (port 3846) with 5 diagnostic tools. Auto-starts when VS Code opens. MCP Config: {\"type\": \"http\", \"url\": \"http://127.0.0.1:3846/mcp\"}. Tools: get_all_diagnostics, get_errors, get_warnings, get_info, get_workspace_health. 3 Commands: Start/Stop/Status server.",
+  "description": "STEP 1: Install this extension. STEP 2: Extension auto-starts HTTP MCP server on port 3846. STEP 3: Add to MCP client config (Claude Desktop/VS Code MCP settings): {\"mcpServers\": {\"diagnostics\": {\"type\": \"http\", \"url\": \"http://127.0.0.1:3846/mcp\", \"description\": \"VS Code diagnostics detector\"}}}. 5 TOOLS: get_all_diagnostics (complete workspace), get_errors (only errors), get_warnings (only warnings), get_info (only info), get_workspace_health (health score 0-100). 3 COMMANDS: Start/Stop/Status server.",
   "version": "1.0.12",
   "publisher": "maaz-tajammul",
   "author": "Maaz Tajammul",
   "license": "MIT",
-  "bin": {
-    "diagnostics-mcp": "./index.js"
-  },
   "main": "./dist/extension.js",
   "engines": {
     "node": ">=18.0.0",
@@ -38,7 +35,6 @@
     "url": "https://github.com/Maaz0313-png/Diagnostics-MCP/issues"
   },
   "qna": "https://github.com/Maaz0313-png/Diagnostics-MCP/discussions",
-  "icon": "https://raw.githubusercontent.com/Maaz0313-png/Diagnostics-MCP/main/icon.png",
   "galleryBanner": {
     "color": "#1e1e1e",
     "theme": "dark"
@@ -79,33 +75,45 @@
         }
       }
     },
-    "mcpConfiguration": {
-      "title": "MCP Client Configuration",
-      "description": "Add this to your MCP client configuration (Claude Desktop, VS Code MCP settings, etc.)",
-      "example": {
-        "mcpServers": {
-          "diagnostics": {
-            "type": "http",
-            "url": "http://127.0.0.1:3846/mcp",
-            "description": "VS Code diagnostics detector (TypeScript, ESLint, Prettier, all extensions)"
-          }
+    "toolsDocumentation": {
+      "title": "5 Available MCP Tools",
+      "tools": {
+        "get_all_diagnostics": {
+          "description": "Get complete diagnostic information from workspace",
+          "returns": "All errors, warnings, info from all files with line/column numbers",
+          "usage": "Use for comprehensive code analysis and overview"
+        },
+        "get_errors": {
+          "description": "Get only error-level diagnostics",
+          "returns": "Critical errors that prevent compilation/execution",
+          "usage": "Focus on fixing breaking issues first"
+        },
+        "get_warnings": {
+          "description": "Get only warning-level diagnostics",
+          "returns": "Code quality warnings and potential issues",
+          "usage": "Improve code quality and maintainability"
+        },
+        "get_info": {
+          "description": "Get only info-level diagnostics",
+          "returns": "Suggestions and minor improvements",
+          "usage": "Code style and optimization suggestions"
+        },
+        "get_workspace_health": {
+          "description": "Get workspace health score (0-100)",
+          "returns": "Health score, status, and issue summary",
+          "usage": "Monitor overall project health and track improvements"
         }
       }
     }
   },
   "scripts": {
-    "start": "node index.js",
-    "test": "node test-simple.js",
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile",
     "lint": "eslint src --ext ts",
-    "package": "vsce package",
-    "prepublish": "npm run compile"
+    "package": "vsce package"
   },
   "files": [
-    "index.js",
     "dist/**/*.js",
     "src/**/*.ts",
     "README.md",
