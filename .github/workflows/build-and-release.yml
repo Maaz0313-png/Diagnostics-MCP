@@ -59,11 +59,53 @@ jobs:
           TAG="v$VERSION"
           VSIX_FILE="diagnostics-mcp-server-$VERSION.vsix"
 
+          # Create release notes
+          cat > release-notes.md << 'EOF'
+          ## Diagnostics MCP Server v${{ steps.package-version.outputs.version }}
+
+          ### 🚀 Features
+          - HTTP MCP server on port 3846
+          - 5 diagnostic tools (all diagnostics, errors, warnings, info, health)
+          - Real-time VS Code diagnostics access
+          - Workspace health scoring (0-100)
+          - Enhanced error handling
+
+          ### 📦 Installation
+          **Option 1: Download from this release**
+          1. Download the VSIX file below
+          2. Install: `code --install-extension diagnostics-mcp-server-${{ steps.package-version.outputs.version }}.vsix --force`
+
+          **Option 2: VS Code Marketplace**
+          1. Open VS Code → Extensions (Ctrl+Shift+X)
+          2. Search for "Diagnostics MCP Server"
+          3. Click Install
+
+          ### 🔗 MCP Configuration
+          Add to your MCP client config (Claude Desktop, VS Code MCP settings):
+          ```json
+          {
+            "mcpServers": {
+              "diagnostics": {
+                "type": "http",
+                "url": "http://127.0.0.1:3846/mcp",
+                "description": "VS Code diagnostics detector"
+              }
+            }
+          }
+          ```
+
+          ### 📖 Documentation
+          See [README.md](https://github.com/${{ github.repository }}/blob/main/README.md) for complete documentation.
+
+          ---
+          **Auto-generated from commit:** ${{ github.sha }}
+          EOF
+
           # Create release with VSIX file
           gh release create "$TAG" \
             "$VSIX_FILE" \
             --title "Diagnostics MCP Server v$VERSION" \
-            --notes "## Diagnostics MCP Server v$VERSION
+            --notes-file release-notes.md
 
       - name: Upload VSIX as artifact
         uses: actions/upload-artifact@v4
