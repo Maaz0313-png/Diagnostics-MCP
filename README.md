@@ -3,7 +3,7 @@
 > **HTTP MCP server with 5 diagnostic tools providing real-time access to ALL VS Code diagnostics (TypeScript, ESLint, Prettier, and all installed extensions)**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-1.0.12-blue.svg)](https://github.com/Maaz0313-png/Diagnostics-MCP)
+[![Version](https://img.shields.io/badge/version-1.0.15-blue.svg)](https://github.com/Maaz0313-png/Diagnostics-MCP)
 
 ## 🎯 Overview
 
