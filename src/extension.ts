@@ -3,6 +3,7 @@ import * as http from "http";
 
 let outputChannel: vscode.OutputChannel;
 let httpServer: http.Server | undefined;
+let serverPort: number = 3846; // Default port, will be overridden by config
 
 /**
  * Extension activation - WITH HTTP SERVER
@@ -12,8 +13,23 @@ export function activate(context: vscode.ExtensionContext) {
   outputChannel.appendLine("✅ EXTENSION ACTIVATED!");
   outputChannel.show();
 
-  // Start HTTP server for MCP
-  startHttpServer();
+  // Read configuration
+  const config = vscode.workspace.getConfiguration("diagnostics-mcp-server");
+  const autoStart = config.get<boolean>("autoStart", true);
+  serverPort = config.get<number>("port", 3846);
+
+  outputChannel.appendLine(
+    `📋 Config - AutoStart: ${autoStart}, Port: ${serverPort}`
+  );
+
+  // Start HTTP server for MCP if autoStart is enabled
+  if (autoStart) {
+    startHttpServer();
+  } else {
+    outputChannel.appendLine(
+      "⏸️ AutoStart disabled - use 'Start HTTP MCP Server' command to start manually"
+    );
+  }
 
   // Register commands
   const startCommand = vscode.commands.registerCommand(
@@ -22,12 +38,14 @@ export function activate(context: vscode.ExtensionContext) {
       if (!httpServer || !httpServer.listening) {
         startHttpServer();
         vscode.window.showInformationMessage(
-          "🚀 HTTP MCP Server started on port 3846"
+          `🚀 HTTP MCP Server started on port ${serverPort}`
         );
-        outputChannel.appendLine("🚀 HTTP MCP Server manually started");
+        outputChannel.appendLine(
+          `🚀 HTTP MCP Server manually started on port ${serverPort}`
+        );
       } else {
         vscode.window.showInformationMessage(
-          "✅ HTTP MCP Server already running on port 3846"
+          `✅ HTTP MCP Server already running on port ${serverPort}`
         );
         outputChannel.appendLine("✅ HTTP MCP Server already running");
       }
@@ -38,10 +56,9 @@ export function activate(context: vscode.ExtensionContext) {
     "diagnostics-mcp.stop",
     () => {
       if (httpServer && httpServer.listening) {
-        httpServer.close(() => {
-          vscode.window.showInformationMessage("🛑 HTTP MCP Server stopped");
-          outputChannel.appendLine("🛑 HTTP MCP Server stopped");
-        });
+        stopHttpServer();
+        vscode.window.showInformationMessage("🛑 HTTP MCP Server stopped");
+        outputChannel.appendLine("🛑 HTTP MCP Server stopped");
       } else {
         vscode.window.showInformationMessage("⚠️ HTTP MCP Server not running");
         outputChannel.appendLine("⚠️ HTTP MCP Server not running");
@@ -54,8 +71,8 @@ export function activate(context: vscode.ExtensionContext) {
     () => {
       const isRunning = httpServer && httpServer.listening;
       const status = isRunning ? "RUNNING" : "STOPPED";
-      const port = isRunning ? "3846" : "N/A";
-      const url = isRunning ? "http://127.0.0.1:3846/mcp" : "N/A";
+      const port = isRunning ? serverPort.toString() : "N/A";
+      const url = isRunning ? `http://127.0.0.1:${serverPort}/mcp` : "N/A";
 
       const diagnosticsResult = getAllDiagnostics();
       const healthResult = getWorkspaceHealth();
@@ -75,8 +92,41 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
+  const restartCommand = vscode.commands.registerCommand(
+    "diagnostics-mcp.restart",
+    () => {
+      if (httpServer && httpServer.listening) {
+        outputChannel.appendLine("🔄 Restarting HTTP MCP Server...");
+        stopHttpServer();
+        // Wait a bit before restarting
+        setTimeout(() => {
+          startHttpServer();
+          vscode.window.showInformationMessage(
+            `🔄 HTTP MCP Server restarted on port ${serverPort}`
+          );
+          outputChannel.appendLine(
+            `✅ HTTP MCP Server restarted on port ${serverPort}`
+          );
+        }, 500);
+      } else {
+        startHttpServer();
+        vscode.window.showInformationMessage(
+          `🚀 HTTP MCP Server started on port ${serverPort}`
+        );
+        outputChannel.appendLine(
+          `🚀 HTTP MCP Server started on port ${serverPort}`
+        );
+      }
+    }
+  );
+
   // Add commands to context
-  context.subscriptions.push(startCommand, stopCommand, statusCommand);
+  context.subscriptions.push(
+    startCommand,
+    stopCommand,
+    statusCommand,
+    restartCommand
+  );
 
   vscode.window.showInformationMessage("✅ Diagnostics MCP - ACTIVATED!");
   console.log("✅ DIAGNOSTICS MCP: ACTIVATED");
@@ -151,12 +201,16 @@ function startHttpServer() {
     res.end("Not Found");
   });
 
-  httpServer.listen(3846, () => {
-    outputChannel.appendLine("🚀 HTTP Server started on http://localhost:3846");
-    outputChannel.appendLine("   - Health: http://localhost:3846/health");
-    outputChannel.appendLine("   - MCP: http://localhost:3846/mcp");
+  httpServer.listen(serverPort, () => {
+    outputChannel.appendLine(
+      `🚀 HTTP Server started on http://localhost:${serverPort}`
+    );
+    outputChannel.appendLine(
+      `   - Health: http://localhost:${serverPort}/health`
+    );
+    outputChannel.appendLine(`   - MCP: http://localhost:${serverPort}/mcp`);
     vscode.window.showInformationMessage(
-      "🚀 Diagnostics MCP Server running on http://localhost:3846"
+      `🚀 Diagnostics MCP Server running on http://localhost:${serverPort}`
     );
   });
 
@@ -167,14 +221,22 @@ function startHttpServer() {
 }
 
 /**
+ * Stop HTTP server
+ */
+function stopHttpServer() {
+  if (httpServer && httpServer.listening) {
+    httpServer.close(() => {
+      outputChannel.appendLine("� HTTP Server stopped");
+    });
+    httpServer = undefined;
+  }
+}
+
+/**
  * Extension deactivation
  */
 export function deactivate() {
-  if (httpServer) {
-    httpServer.close(() => {
-      outputChannel.appendLine("👋 HTTP Server stopped");
-    });
-  }
+  stopHttpServer();
   console.log("👋 DIAGNOSTICS MCP: DEACTIVATED");
 }
 

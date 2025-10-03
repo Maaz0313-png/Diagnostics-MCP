@@ -16,6 +16,37 @@ This Model Context Protocol (MCP) server provides AI agents with real-time acces
 - ✅ **All VS Code Extensions** diagnostics
 - ✅ **Real-time updates** as you code
 
+## ⚙️ Configuration
+
+The extension provides two configuration settings:
+
+### `diagnostics-mcp-server.autoStart`
+
+- **Type**: `boolean`
+- **Default**: `true`
+- **Description**: Automatically start HTTP MCP server when VS Code opens
+
+**To disable auto-start:**
+
+1. Open VS Code Settings (Ctrl+,)
+2. Search for "diagnostics-mcp-server"
+3. Uncheck "Auto Start"
+4. Use the "Start HTTP MCP Server" command to start manually
+
+### `diagnostics-mcp-server.port`
+
+- **Type**: `number`
+- **Default**: `3846`
+- **Description**: Port for HTTP MCP server
+
+**To change the port:**
+
+1. Open VS Code Settings (Ctrl+,)
+2. Search for "diagnostics-mcp-server.port"
+3. Set your desired port number
+4. Restart the server or reload VS Code
+5. Update your MCP client configuration with the new port
+
 ## 📋 Installation
 
 ### Step 1: Install VS Code Extension
@@ -230,19 +261,24 @@ Get workspace health score (0-100) based on diagnostics.
 
 ## 🎮 VS Code Commands
 
-Three commands available in Command Palette (Ctrl+Shift+P):
+Four commands available in Command Palette (Ctrl+Shift+P):
 
-1. **🚀 Diagnostics MCP: Start HTTP MCP Server (Port 3846)**
+1. **🚀 Diagnostics MCP: Start HTTP MCP Server**
 
    - Manually start the MCP server
-   - Use if server didn't auto-start
+   - Use if server didn't auto-start or autoStart is disabled
 
 2. **🛑 Diagnostics MCP: Stop HTTP MCP Server**
 
    - Stop the running MCP server
    - Useful for troubleshooting
 
-3. **📊 Diagnostics MCP: MCP Server Status (5 Tools + Health)**
+3. **🔄 Diagnostics MCP: Restart HTTP MCP Server**
+
+   - Restart the MCP server (stop + start)
+   - Use after changing configuration settings (port, etc.)
+
+4. **📊 Diagnostics MCP: MCP Server Status (5 Tools + Health)**
    - View server status, current diagnostics count, and health score
    - Quick health check of your workspace
 
@@ -271,8 +307,9 @@ MIT License - see [LICENSE](LICENSE) file for details
 ### "Port 3846 already in use"
 
 1. Stop other applications using port 3846
-2. Or change port in VS Code settings: `diagnostics-mcp.port`
-3. Restart VS Code after changing port
+2. Or change port in VS Code settings: `diagnostics-mcp-server.port`
+3. Use "Restart HTTP MCP Server" command or reload VS Code
+4. Update your MCP client config with the new port
 
 ### "No diagnostics returned"
 
@@ -282,7 +319,14 @@ MIT License - see [LICENSE](LICENSE) file for details
 
 ## 📝 Version History
 
-### 1.0.12 (Current)
+### 1.0.14 (Current)
+
+- ✅ Configuration settings support (autoStart, port)
+- ✅ Restart command for easy server restart
+- ✅ Configurable port number
+- ✅ Optional auto-start disable
+
+### 1.0.12-1.0.13
 
 - ✅ Complete HTTP MCP server implementation
 - ✅ 5 specialized diagnostic tools
